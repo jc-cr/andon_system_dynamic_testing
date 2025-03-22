@@ -1,0 +1,40 @@
+services:
+  realsense_sdk:
+    build:
+      context: ..
+      dockerfile: .docker/Dockerfile.python
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - ..:/app
+      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ${XAUTHORITY:-~/.Xauthority}:/root/.Xauthority
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - LIBGL_ALWAYS_SOFTWARE=1
+      - XAUTHORITY=/root/.Xauthority
+    group_add:
+      # Add the container user to these groups
+      - video
+      - plugdev
+    devices:
+      # Grant access to video devices
+      - /dev/video0:/dev/video0
+      - /dev/video1:/dev/video1
+      - /dev/video2:/dev/video2
+      - /dev/video3:/dev/video3
+      - /dev/video4:/dev/video4
+      - /dev/video5:/dev/video5
+      - /dev/video6:/dev/video6
+      - /dev/video7:/dev/video7
+      - /dev/video8:/dev/video8
+      - /dev/video9:/dev/video9
+      # Grant access to USB devices for RealSense
+      - /dev/bus/usb:/dev/bus/usb
+    # Add privileged mode for full access to host devices (needed for RealSense)
+    privileged: true
+    ipc: host
+    stdin_open: true
+    tty: true
+    network_mode: host
+    command: bash -c "realsense-viewer"
