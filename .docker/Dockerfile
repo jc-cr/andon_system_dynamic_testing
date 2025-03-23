@@ -80,7 +80,8 @@ RUN echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" |
 RUN apt-get update && apt-get install -y \
     libedgetpu1-std \
     python3-pycoral \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && ln -s /usr/lib/libedgetpu.so.1 /usr/lib/libedgetpu.so
 
 RUN mkdir coral
 WORKDIR /home/coral
@@ -89,7 +90,42 @@ RUN git clone https://github.com/google-coral/pycoral.git
 WORKDIR /home/coral/pycoral
 RUN bash examples/install_requirements.sh classify_image.py
 
+
+FROM edgetpu AS example_object_detection
+
+
 # Set working directory back to app
+WORKDIR /home
+
+
+RUN apt-get update && apt-get install -y \
+    wget \
+    gstreamer1.0-tools \
+    gstreamer1.0-plugins-base \
+    gstreamer1.0-plugins-good \
+    gstreamer1.0-plugins-bad \
+    gstreamer1.0-plugins-ugly \
+    gstreamer1.0-libav \
+    python3-gi \
+    python3-gst-1.0 \
+    python3-numpy \
+    libgstreamer1.0-dev \
+    libgstreamer-plugins-base1.0-dev \
+    libgirepository1.0-dev \
+    libcairo2-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV LD_LIBRARY_PATH=/usr/lib:/usr/local/lib:${LD_LIBRARY_PATH}
+
+
+RUN git clone https://github.com/jc-cr/example-object-tracker.git
+WORKDIR /home/example-object-tracker
+RUN sh download_models.sh
+WORKDIR gstreamer
+RUN bash install_requirements.sh
+
+RUN pip install --no-cache-dir matplotlib scikit-image filterpy
+
 WORKDIR /app
 
 # Default command
