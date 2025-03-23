@@ -53,9 +53,6 @@ FROM realsense AS python
 # Install Python wrapper for RealSense
 RUN pip install --no-cache-dir pyrealsense2 numpy opencv-python
 
-# Create a working directory
-WORKDIR /app
-
 # Set environment variables to fix GL issues
 ENV DISPLAY=:0
 ENV LIBGL_ALWAYS_SOFTWARE=1
@@ -63,6 +60,37 @@ ENV MESA_GL_VERSION_OVERRIDE=3.3
 ENV __GLX_VENDOR_LIBRARY_NAME=mesa
 ENV LIBGL_ALWAYS_INDIRECT=0
 ENV QT_X11_NO_MITSHM=1
+
+
+
+FROM python AS edgetpu
+
+WORKDIR /home
+
+RUN apt-get update && apt-get install -y \
+    git \
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add Edge TPU repository
+RUN echo "deb https://packages.cloud.google.com/apt coral-edgetpu-stable main" | tee /etc/apt/sources.list.d/coral-edgetpu.list && \
+    curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+
+# Install Edge TPU libraries
+RUN apt-get update && apt-get install -y \
+    libedgetpu1-std \
+    python3-pycoral \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir coral
+WORKDIR /home/coral
+RUN git clone https://github.com/google-coral/pycoral.git
+
+WORKDIR /home/coral/pycoral
+RUN bash examples/install_requirements.sh classify_image.py
+
+# Set working directory back to app
+WORKDIR /app
 
 # Default command
 CMD ["bash"]

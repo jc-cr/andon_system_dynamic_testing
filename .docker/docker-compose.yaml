@@ -1,8 +1,10 @@
 services:
-  realsense_sdk:
+
+  # Base service with common configurations
+  base_service:
     build:
       context: ..
-      dockerfile: .docker/Dockerfile.python
+      dockerfile: .docker/Dockerfile
     user: "${UID:-1000}:${GID:-1000}"
     volumes:
       - ..:/app
@@ -29,12 +31,24 @@ services:
       - /dev/video7:/dev/video7
       - /dev/video8:/dev/video8
       - /dev/video9:/dev/video9
-      # Grant access to USB devices for RealSense
+      # Grant access to USB devices for RealSense and Edge TPU
       - /dev/bus/usb:/dev/bus/usb
-    # Add privileged mode for full access to host devices (needed for RealSense)
     privileged: true
     ipc: host
     stdin_open: true
     tty: true
     network_mode: host
+  
+  realsense_viewer:
+    extends: base_service
+    profiles: ["realsense_viewer"]
     command: bash -c "realsense-viewer"
+
+  edge_tpu_validate:
+    extends: base_service
+    command: >
+      bash -c "cd /home/coral/pycoral && 
+      python3 examples/classify_image.py 
+      --model test_data/mobilenet_v2_1.0_224_inat_bird_quant_edgetpu.tflite 
+      --labels test_data/inat_bird_labels.txt 
+      --input test_data/parrot.jpg"
