@@ -1,0 +1,7 @@
+- starting 1t 30 deg since realsense has smaller fov
+- 60 % thresh on both
+Fwd:
+- cut off last 0.5 sec
+
+bck:
+- cut off last 1 sec
