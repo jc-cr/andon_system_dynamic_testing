@@ -53,13 +53,8 @@ services:
       --labels test_data/inat_bird_labels.txt 
       --input test_data/parrot.jpg"
 
-  depth_detection_example:
+  rs_stream_example:
     extends: base_service
     command: >
-      bash -c "cd /home/example-object-tracker/gstreamer &&
-      python3 detect.py --tracker sort --target person --threshold 0.5 --videosrc /dev/video8"
+      bash -c "python3 scripts/realsense_stream.py"
 
-  depth_detection_debug:
-    extends: base_service
-    command: >
-      bash -c "cd /home/example-object-tracker/gstreamer  && ls && ls /dev/video*"
