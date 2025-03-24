@@ -62,4 +62,10 @@ services:
     extends: base_service
     command: >
       bash -c "python3 scripts/andon_stream.py"
+    
+  data_logger_viz:
+    extends: base_service
+    command: >
+      bash -c "python3 scripts/main.py"
+
 

@@ -148,6 +148,7 @@ RUN apt-get update && apt-get install -y \
     libxcb-render-util0 \
     libxcb-xfixes0 \
     x11-utils \
+    python3-pil.imagetk \
     && rm -rf /var/lib/apt/lists/*
 
 

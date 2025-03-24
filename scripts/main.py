@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+import sys
+sys.path.append('/home/example-object-tracker')
+sys.path.append('/home/example-object-tracker/gstreamer')
+
 import tkinter as tk
 from tkinter import ttk
 import time
@@ -13,7 +17,6 @@ import numpy as np
 from threading import Lock
 
 import argparse
-import sys
 
 from realsense_stream import RealSenseStream
 from andon_stream import AndonStream
@@ -36,6 +39,11 @@ class DynamicTestVisualizer:
         self.andon_json_path = None
         self.countdown_active = False
         self.countdown_value = 0
+        
+        # Video recording
+        self.realsense_video_writer = None
+        self.andon_video_writer = None
+        self.video_fps = 30
         
         # Setup main window
         self.root = tk.Tk()
@@ -140,11 +148,14 @@ class DynamicTestVisualizer:
         self.andon_image_label = ttk.Label(self.andon_image_frame)
         self.andon_image_label.pack(fill=tk.BOTH, expand=True)
     
+    
     def update_display(self):
         """Update display with latest data from both streams"""
         try:
             # Get latest data from RealSense
             realsense_data = self.realsense_stream.get_latest_data()
+            andon_data = self.andon_stream.get_latest_data()
+            
             if realsense_data:
                 # Update detection info
                 detected = realsense_data.get('detected', False)
@@ -162,12 +173,27 @@ class DynamicTestVisualizer:
                 # Update image
                 frame = realsense_data.get('frame')
                 if frame is not None:
-                    frame = self._prepare_frame(frame, realsense_data)
-                    self.realsense_photo = ImageTk.PhotoImage(frame)
+                    # Create a copy for the display
+                    display_frame = frame.copy()
+                    
+                    # Fix color if needed (handle BGR to RGB conversion)
+                    if display_frame.ndim == 3 and display_frame.shape[2] == 3:
+                        display_frame = cv2.cvtColor(display_frame, cv2.COLOR_BGR2RGB)
+                    
+                    # Draw bounding box overlay for display
+                    cv_frame_with_overlay = self._add_overlay_to_frame(display_frame, realsense_data, is_realsense=True)
+                    
+                    # Convert to PIL for display
+                    pil_frame = Image.fromarray(cv_frame_with_overlay)
+                    self.realsense_photo = ImageTk.PhotoImage(pil_frame)
                     self.realsense_image_label.configure(image=self.realsense_photo)
+                    
+                    # Add frame with overlay to video if recording
+                    if self.is_recording and self.realsense_video_writer is not None:
+                        # Convert back to BGR for video writer
+                        video_frame = cv2.cvtColor(cv_frame_with_overlay, cv2.COLOR_RGB2BGR)
+                        self.realsense_video_writer.write(video_frame)
             
-            # Get latest data from Andon system
-            andon_data = self.andon_stream.get_latest_data()
             if andon_data:
                 # Update detection info
                 detected = andon_data.get('detected', False)
@@ -185,31 +211,47 @@ class DynamicTestVisualizer:
                 # Update image
                 frame = andon_data.get('frame')
                 if frame is not None:
-                    frame = self._prepare_frame(frame, andon_data)
-                    self.andon_photo = ImageTk.PhotoImage(frame)
+                    # Create a copy for the display
+                    display_frame = frame.copy()
+                    
+                    # Draw bounding box overlay for display
+                    cv_frame_with_overlay = self._add_overlay_to_frame(display_frame, andon_data, is_realsense=False)
+                    
+                    # Convert to PIL for display
+                    pil_frame = Image.fromarray(cv_frame_with_overlay)
+                    self.andon_photo = ImageTk.PhotoImage(pil_frame)
                     self.andon_image_label.configure(image=self.andon_photo)
+                    
+                    # Add frame with overlay to video if recording
+                    if self.is_recording and self.andon_video_writer is not None:
+                        # Convert back to BGR for video writer
+                        video_frame = cv2.cvtColor(cv_frame_with_overlay, cv2.COLOR_RGB2BGR)
+                        self.andon_video_writer.write(video_frame)
             
             # Record data if active
             if self.is_recording:
                 self._record_data(realsense_data, andon_data)
         
         except Exception as e:
-            self.logger.error(f"Error updating display: {e}", exc_info=True)
+            self.logger.error(f"Error updating display: {e}")
         
         # Schedule next update
         self.root.after(33, self.update_display)  # ~30 FPS
+
+
+
+
     
-    def _prepare_frame(self, frame, data):
-        """Prepare frame for display with detection overlay"""
+    def _add_overlay_to_frame(self, frame, data, is_realsense=True):
+        """Add detection overlay to frame"""
         try:
             if isinstance(frame, np.ndarray):
-                # Convert frame to PIL Image
-                if frame.ndim == 2:  # Grayscale
-                    display_frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
-                elif frame.shape[2] == 4:  # RGBA
-                    display_frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2RGB)
-                else:
-                    display_frame = frame.copy()
+                # Create a copy to avoid modifying the original
+                display_frame = frame.copy()
+                
+                # Convert frame if needed
+                if display_frame.ndim == 2:  # Grayscale
+                    display_frame = cv2.cvtColor(display_frame, cv2.COLOR_GRAY2RGB)
                 
                 # Draw detection box if available
                 if data.get('detected', False):
@@ -218,11 +260,24 @@ class DynamicTestVisualizer:
                         # Get frame dimensions
                         height, width = display_frame.shape[:2]
                         
-                        # Get normalized coordinates (assuming bbox has xmin, ymin, xmax, ymax)
-                        xmin = int(bbox.get('xmin', 0) * width)
-                        ymin = int(bbox.get('ymin', 0) * height)
-                        xmax = int(bbox.get('xmax', 0) * width)
-                        ymax = int(bbox.get('ymax', 0) * height)
+                        if is_realsense:
+                            # RealSense uses normalized coordinates (0-1)
+                            xmin = int(bbox.get('xmin', 0) * width)
+                            ymin = int(bbox.get('ymin', 0) * height)
+                            xmax = int(bbox.get('xmax', 0) * width)
+                            ymax = int(bbox.get('ymax', 0) * height)
+                        else:
+                            # Andon system uses absolute pixel coordinates
+                            xmin = int(bbox.get('xmin', 0))
+                            ymin = int(bbox.get('ymin', 0))
+                            xmax = int(bbox.get('xmax', 0))
+                            ymax = int(bbox.get('ymax', 0))
+                            
+                            # Ensure coordinates are within image bounds
+                            xmin = max(0, min(xmin, width-1))
+                            ymin = max(0, min(ymin, height-1))
+                            xmax = max(0, min(xmax, width-1))
+                            ymax = max(0, min(ymax, height-1))
                         
                         # Draw rectangle
                         cv2.rectangle(display_frame, (xmin, ymin), (xmax, ymax), (0, 255, 0), 2)
@@ -230,21 +285,36 @@ class DynamicTestVisualizer:
                         # Draw depth info
                         depth = data.get('depth', 0)
                         depth_text = f"Depth: {depth/1000:.2f}m"
+                        text_y_pos = max(20, ymin - 10)  # Ensure text is visible
                         cv2.putText(display_frame, depth_text, 
-                                   (xmin, ymin - 10), 
+                                   (xmin, text_y_pos), 
                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                        
+                        # Add confidence info if available
+                        confidence = data.get('confidence', 0)
+                        if confidence > 0:
+                            conf_text = f"Conf: {confidence:.2f}"
+                            conf_y_pos = max(50, ymin - 30)  # Ensure text is visible
+                            cv2.putText(display_frame, conf_text,
+                                      (xmin, conf_y_pos),
+                                      cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
                 
-                # Convert to PIL Image
-                return Image.fromarray(display_frame)
-            elif isinstance(frame, Image.Image):
-                return frame
+                return display_frame
             else:
-                self.logger.warning(f"Unknown frame type: {type(frame)}")
-                return None
+                self.logger.warning(f"Unknown frame type for overlay: {type(frame)}")
+                return frame
         
         except Exception as e:
-            self.logger.error(f"Error preparing frame: {e}", exc_info=True)
-            return None
+            self.logger.error(f"Error adding overlay to frame: {e}")
+            return frame
+    
+    def _prepare_frame(self, frame, data):
+        """Prepare frame for display with detection overlay - legacy method kept for compatibility"""
+        is_realsense = 'centroid' not in data  # RealSense has centroid, Andon doesn't
+        fixed_frame = frame.copy()
+        if fixed_frame.ndim == 3 and fixed_frame.shape[2] == 3:
+            fixed_frame = cv2.cvtColor(fixed_frame, cv2.COLOR_BGR2RGB)
+        return Image.fromarray(self._add_overlay_to_frame(fixed_frame, data, is_realsense=is_realsense))
     
     def toggle_recording(self):
         """Toggle recording state with countdown"""
@@ -254,7 +324,11 @@ class DynamicTestVisualizer:
             self.record_button.configure(text="Start Recording")
             self.status_var.set("Ready")
             self.countdown_var.set("--")
-            self.logger.info("Recording stopped")
+            
+            # Finalize videos
+            self._finalize_recording()
+            
+            self.logger.info(f"Recording stopped. Data saved to {self.data_dir}")
         else:
             # Start countdown then recording
             self.record_button.configure(state="disabled")
@@ -282,6 +356,7 @@ class DynamicTestVisualizer:
         with open(self.andon_json_path, 'w') as f:
             json.dump([], f)
             
+            
         # Start countdown
         self._update_countdown()
     
@@ -301,21 +376,111 @@ class DynamicTestVisualizer:
             self.record_button.configure(text="Stop Recording", state="normal")
             self.status_var.set("Recording...")
             self.countdown_var.set("0")
+            
+            # Initialize video writers
+            self._initialize_video_writers()
+            
             self.logger.info(f"Recording started to {self.data_dir}")
     
-    def _record_data(self, realsense_data, andon_data):
-        """Record data from both streams"""
+    def _initialize_video_writers(self):
+        """Initialize video writers for both streams"""
         try:
+            # Define video paths
+            realsense_video_path = os.path.join(self.data_dir, "realsense_video.mp4")
+            andon_video_path = os.path.join(self.data_dir, "andon_video.mp4")
+            
+            # Get sample frames to determine dimensions
+            realsense_data = self.realsense_stream.get_latest_data()
+            andon_data = self.andon_stream.get_latest_data()
+            
+            # RealSense video writer
+            if realsense_data and 'frame' in realsense_data:
+                frame = realsense_data['frame']
+                if isinstance(frame, np.ndarray):
+                    h, w = frame.shape[:2]
+                    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                    self.realsense_video_writer = cv2.VideoWriter(
+                        realsense_video_path, fourcc, self.video_fps, (w, h)
+                    )
+            
+            # Andon video writer
+            if andon_data and 'frame' in andon_data:
+                frame = andon_data['frame']
+                if isinstance(frame, np.ndarray):
+                    h, w = frame.shape[:2]
+                    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+                    self.andon_video_writer = cv2.VideoWriter(
+                        andon_video_path, fourcc, self.video_fps, (w, h)
+                    )
+                    
+        except Exception as e:
+            self.logger.error(f"Error initializing video writers: {e}")
+    
+    def _finalize_recording(self):
+        """Finalize recording and close video writers"""
+        try:
+            # Close video writers
+            if self.realsense_video_writer:
+                self.realsense_video_writer.release()
+                self.realsense_video_writer = None
+            
+            if self.andon_video_writer:
+                self.andon_video_writer.release()
+                self.andon_video_writer = None
+                
+        except Exception as e:
+            self.logger.error(f"Error finalizing recording: {e}")
+    
+    
+
+
+
+
+    
+    def on_close(self):
+        """Handle window close event"""
+        self.logger.info("Shutting down...")
+        
+        # Ensure recording is properly finalized
+        if self.is_recording:
+            self.is_recording = False
+            self._finalize_recording()
+            
+        self.root.destroy()
+    
+    def run(self):
+        """Start visualizer"""
+        # Start display updates
+        self.root.after(100, self.update_display)
+        
+        # Start main loop
+        self.root.mainloop()
+
+
+    def _record_data(self, realsense_data, andon_data):
+        """Record data from both streams with synchronized timestamps"""
+        try:
+            # Use the same timestamp for both records to ensure synchronization
             timestamp = datetime.now().timestamp()
             
-            # Prepare RealSense data
+            # Record RealSense data
             if realsense_data:
                 realsense_entry = {
                     'timestamp': timestamp,
                     'detected': realsense_data.get('detected', False),
-                    'confidence': realsense_data.get('confidence', 0),
-                    'depth': realsense_data.get('depth', 0)
+                    'confidence': float(realsense_data.get('confidence', 0)),
+                    'depth': float(realsense_data.get('depth', 0))
                 }
+                
+                # Add bounding box data if available
+                if realsense_data.get('detected', False) and 'bbox' in realsense_data:
+                    bbox = realsense_data.get('bbox', {})
+                    realsense_entry['bbox'] = {
+                        'xmin': float(bbox.get('xmin', 0)),
+                        'ymin': float(bbox.get('ymin', 0)), 
+                        'xmax': float(bbox.get('xmax', 0)),
+                        'ymax': float(bbox.get('ymax', 0))
+                    }
                 
                 # Load existing data
                 with open(self.realsense_json_path, 'r') as f:
@@ -328,14 +493,24 @@ class DynamicTestVisualizer:
                 with open(self.realsense_json_path, 'w') as f:
                     json.dump(realsense_records, f)
             
-            # Prepare Andon data
+            # Record Andon data with the SAME timestamp
             if andon_data:
                 andon_entry = {
-                    'timestamp': timestamp,
+                    'timestamp': timestamp,  # Use the same timestamp for synchronization
                     'detected': andon_data.get('detected', False),
-                    'confidence': andon_data.get('confidence', 0),
-                    'depth': andon_data.get('depth', 0)
+                    'confidence': float(andon_data.get('confidence', 0)),
+                    'depth': float(andon_data.get('depth', 0))
                 }
+                
+                # Add bounding box data if available
+                if andon_data.get('detected', False) and 'bbox' in andon_data:
+                    bbox = andon_data.get('bbox', {})
+                    andon_entry['bbox'] = {
+                        'xmin': float(bbox.get('xmin', 0)),
+                        'ymin': float(bbox.get('ymin', 0)), 
+                        'xmax': float(bbox.get('xmax', 0)),
+                        'ymax': float(bbox.get('ymax', 0))
+                    }
                 
                 # Load existing data
                 with open(self.andon_json_path, 'r') as f:
@@ -347,61 +522,9 @@ class DynamicTestVisualizer:
                 # Save updated data
                 with open(self.andon_json_path, 'w') as f:
                     json.dump(andon_records, f)
-            
-            # Save frames if available
-            if realsense_data and 'frame' in realsense_data:
-                frame_path = os.path.join(self.data_dir, f"realsense_{timestamp:.3f}.jpg")
-                cv2.imwrite(frame_path, realsense_data['frame'])
-            
-            if andon_data and 'frame' in andon_data:
-                frame_path = os.path.join(self.data_dir, f"andon_{timestamp:.3f}.jpg")
-                cv2.imwrite(frame_path, andon_data['frame'])
                 
         except Exception as e:
-            self.logger.error(f"Error recording data: {e}", exc_info=True)
-    
-    def on_close(self):
-        """Handle window close event"""
-        self.logger.info("Shutting down...")
-        self.root.destroy()
-    
-    def run(self):
-        """Start visualizer"""
-        # Start display updates
-        self.root.after(100, self.update_display)
-        
-        # Start main loop
-        self.root.mainloop()
-
-
-# Setup logging
-def setup_logging(debug=False):
-
-    """Setup logging configuration"""
-    # Create logs directory
-    log_dir = "logs"
-    os.makedirs(log_dir, exist_ok=True)
-    
-    # Configure logging
-    log_level = logging.DEBUG if debug else logging.INFO
-    log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    
-    # Setup handlers
-    handlers = [logging.StreamHandler()]
-    
-    # Add file handler
-    log_file = os.path.join(log_dir, f"dynamic_test_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
-    file_handler = logging.FileHandler(log_file)
-    handlers.append(file_handler)
-    
-    # Configure logging
-    logging.basicConfig(
-        level=log_level,
-        format=log_format,
-        handlers=handlers
-    )
-    
-    return logging.getLogger("main")
+            self.logger.error(f"Error recording data: {e}")
 
 
 def parse_args():
@@ -427,13 +550,18 @@ def main():
     args = parse_args()
     delay = args.delay
     
-    # Setup logging
-    logger = setup_logging(args.debug)
+    # Configure simple console logging
+    logging.basicConfig(
+        level=logging.INFO if not args.debug else logging.DEBUG,
+        format='%(asctime)s - %(levelname)s - %(message)s',
+        handlers=[logging.StreamHandler()]
+    )
+    
+    logger = logging.getLogger("main")
     logger.info(f"Starting Dynamic Testing with {delay}s start delay")
     
     try:
         # Initialize stream classes
-        # Replace these with your actual implementations
         realsense_stream = RealSenseStream()
         andon_stream = AndonStream()
 
@@ -452,7 +580,7 @@ def main():
         visualizer.run()
         
     except Exception as e:
-        logger.error(f"Application error: {e}", exc_info=True)
+        logger.error(f"Application error: {e}")
 
         # Cleanup streams
         realsense_stream.stop()

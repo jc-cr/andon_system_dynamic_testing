@@ -64,7 +64,7 @@ class RealSenseStream:
                  model_path='/home/example-object-tracker/models/mobilenet_ssd_v2_coco_quant_postprocess_edgetpu.tflite',
                  labels_path='/home/example-object-tracker/models/coco_labels.txt',
                  target_class="person",
-                 detection_threshold=0.5,
+                 detection_threshold=0.6,
                  depth_radius=1):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.logger.info("Initializing RealSense stream")
