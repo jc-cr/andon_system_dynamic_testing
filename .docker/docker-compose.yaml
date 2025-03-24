@@ -57,4 +57,9 @@ services:
     extends: base_service
     command: >
       bash -c "python3 scripts/realsense_stream.py"
+  
+  andon_stream_example:
+    extends: base_service
+    command: >
+      bash -c "python3 scripts/andon_stream.py"
 
