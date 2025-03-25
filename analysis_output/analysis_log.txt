@@ -1,4 +1,4 @@
-Analysis started at: 2025-03-25 02:30:19
+Analysis started at: 2025-03-25 14:00:42
 
 Found 11 test directories
 
@@ -7,17 +7,17 @@ Analyzing logs/dynamic_test/30_l_bck_20250324_195632:
   - Angle: 30
   - Direction: back
   - Total dataset duration: 12.81 seconds
-  - Config absolute timestamps: 1742846199.487723 to 1742846211.54098
-  - Effective time window: 12.05 seconds
+  - Config absolute timestamps: 1742846201.030974 to 1742846211.54098
+  - Effective time window: 10.51 seconds
   - All RealSense records: 230
   - All Andon records: 230
   - Total RealSense detections: 170
   - Total Andon detections: 115
   - Analysis results:
-    - Aligned pairs: 218
-    - Detection rate: 0.61
-    - Depth MAE: 1043.61 mm
-    - Valid depth pairs: 104
+    - Aligned pairs: 189
+    - Detection rate: 0.53
+    - Depth MAE: 958.58 mm
+    - Valid depth pairs: 75
 
 Analyzing logs/dynamic_test/15_r_bck_20250324_195950:
   - Test name: 15_r
@@ -176,6 +176,6 @@ Analyzing logs/dynamic_test/30_r_bck20250324_200029:
 Overall Statistics:
 - Tests analyzed: 10
 - Average detection rate: 0.54
-- Average depth MAE: 777.10 mm
+- Average depth MAE: 768.60 mm
 
-Analysis completed at: 2025-03-25 02:30:21
+Analysis completed at: 2025-03-25 14:00:44
