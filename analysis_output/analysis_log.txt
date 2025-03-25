@@ -1,0 +1,181 @@
+Analysis started at: 2025-03-25 02:30:19
+
+Found 11 test directories
+
+Analyzing logs/dynamic_test/30_l_bck_20250324_195632:
+  - Test name: 30_l
+  - Angle: 30
+  - Direction: back
+  - Total dataset duration: 12.81 seconds
+  - Config absolute timestamps: 1742846199.487723 to 1742846211.54098
+  - Effective time window: 12.05 seconds
+  - All RealSense records: 230
+  - All Andon records: 230
+  - Total RealSense detections: 170
+  - Total Andon detections: 115
+  - Analysis results:
+    - Aligned pairs: 218
+    - Detection rate: 0.61
+    - Depth MAE: 1043.61 mm
+    - Valid depth pairs: 104
+
+Analyzing logs/dynamic_test/15_r_bck_20250324_195950:
+  - Test name: 15_r
+  - Angle: -15
+  - Direction: back
+  - Total dataset duration: 9.87 seconds
+  - Config absolute timestamps: 1742846397.143757 to 1742846403.608515
+  - Effective time window: 6.46 seconds
+  - All RealSense records: 188
+  - All Andon records: 188
+  - Total RealSense detections: 154
+  - Total Andon detections: 114
+  - Analysis results:
+    - Aligned pairs: 126
+    - Detection rate: 0.83
+    - Depth MAE: 800.40 mm
+    - Valid depth pairs: 104
+
+Analyzing logs/dynamic_test/30_l_fwd_20250324_195452:
+  - Test name: 30_l
+  - Angle: 30
+  - Direction: forward
+  - Total dataset duration: 9.09 seconds
+  - Config absolute timestamps: 1742846101.565591 to 1742846106.460499
+  - Effective time window: 4.89 seconds
+  - All RealSense records: 169
+  - All Andon records: 169
+  - Total RealSense detections: 146
+  - Total Andon detections: 70
+  - Analysis results:
+    - Aligned pairs: 92
+    - Detection rate: 0.33
+    - Depth MAE: 602.12 mm
+    - Valid depth pairs: 30
+
+Analyzing logs/dynamic_test/0_fwd_20250324_195825:
+  - Test name: 0
+  - Angle: 0
+  - Direction: forward
+  - Total dataset duration: 7.47 seconds
+  - Config absolute timestamps: 1742846314.517409 to 1742846319.299747
+  - Effective time window: 4.78 seconds
+  - All RealSense records: 152
+  - All Andon records: 152
+  - Total RealSense detections: 132
+  - Total Andon detections: 46
+  - Analysis results:
+    - Aligned pairs: 98
+    - Detection rate: 0.27
+    - Depth MAE: 665.78 mm
+    - Valid depth pairs: 26
+
+Analyzing logs/dynamic_test/0_bck_20250324_195843:
+  - Test name: 0
+  - Angle: 0
+  - Direction: back
+  - Total dataset duration: 8.03 seconds
+  - Config absolute timestamps: 1742846330.812653 to 1742846336.645708
+  - Effective time window: 5.83 seconds
+  - All RealSense records: 156
+  - All Andon records: 156
+  - Total RealSense detections: 132
+  - Total Andon detections: 86
+  - Analysis results:
+    - Aligned pairs: 115
+    - Detection rate: 0.74
+    - Depth MAE: 357.57 mm
+    - Valid depth pairs: 85
+
+Analyzing logs/dynamic_test/15_l_bck_20250324_195805:
+  - Test name: 15_l
+  - Angle: 15
+  - Direction: back
+  - Total dataset duration: 9.14 seconds
+  - Config absolute timestamps: 1742846292.807897 to 1742846298.126611
+  - Effective time window: 5.32 seconds
+  - All RealSense records: 172
+  - All Andon records: 172
+  - Total RealSense detections: 157
+  - Total Andon detections: 98
+  - Analysis results:
+    - Aligned pairs: 104
+    - Detection rate: 0.94
+    - Depth MAE: 504.66 mm
+    - Valid depth pairs: 98
+
+Analyzing logs/dynamic_test/15_r_fwd_20250324_195933:
+  - Test name: 15_r
+  - Angle: -15
+  - Direction: forward
+  - Total dataset duration: 7.83 seconds
+  - Config absolute timestamps: 1742846380.263202 to 1742846385.773405
+  - Effective time window: 5.51 seconds
+  - All RealSense records: 158
+  - All Andon records: 158
+  - Total RealSense detections: 122
+  - Total Andon detections: 53
+  - Analysis results:
+    - Aligned pairs: 113
+    - Detection rate: 0.12
+    - Depth MAE: 992.21 mm
+    - Valid depth pairs: 14
+
+Analyzing logs/dynamic_test/15_l_fwd_20250324_195743:
+  - Test name: 15_l
+  - Angle: 15
+  - Direction: forward
+  - Total dataset duration: 8.62 seconds
+  - Config absolute timestamps: 1742846272.390622 to 1742846277.826079
+  - Effective time window: 5.44 seconds
+  - All RealSense records: 166
+  - All Andon records: 166
+  - Total RealSense detections: 138
+  - Total Andon detections: 67
+  - Analysis results:
+    - Aligned pairs: 104
+    - Detection rate: 0.39
+    - Depth MAE: 942.43 mm
+    - Valid depth pairs: 41
+
+Analyzing logs/dynamic_test/30_r_fwd_20250324_200009:
+  - Test name: 30_r
+  - Angle: -30
+  - Direction: forward
+  - Total dataset duration: 7.73 seconds
+  - Config absolute timestamps: 1742846416.10523 to 1742846421.819879
+  - Effective time window: 5.71 seconds
+  - All RealSense records: 152
+  - All Andon records: 152
+  - Total RealSense detections: 130
+  - Total Andon detections: 62
+  - Analysis results:
+    - Aligned pairs: 113
+    - Detection rate: 0.20
+    - Depth MAE: 927.68 mm
+    - Valid depth pairs: 23
+
+Analyzing logs/dynamic_test/30_r_bck20250324_200029:
+  - Test name: 30_r
+  - Angle: -30
+  - Direction: back
+  - Total dataset duration: 28.28 seconds
+  - Config absolute timestamps: 1742846437.008617 to 1742846442.189815
+  - Effective time window: 5.18 seconds
+  - All RealSense records: 496
+  - All Andon records: 496
+  - Total RealSense detections: 178
+  - Total Andon detections: 251
+  - Analysis results:
+    - Aligned pairs: 105
+    - Detection rate: 1.00
+    - Depth MAE: 934.54 mm
+    - Valid depth pairs: 104
+
+
+Overall Statistics:
+- Tests analyzed: 10
+- Average detection rate: 0.54
+- Average depth MAE: 777.10 mm
+
+Analysis completed at: 2025-03-25 02:30:21

@@ -127,7 +127,7 @@ RUN bash install_requirements.sh
 RUN pip install --no-cache-dir matplotlib scikit-image filterpy
 
 
-FROM example_object_detection AS final
+FROM example_object_detection AS visualizer
 
 
 # Install system dependencies
@@ -164,6 +164,13 @@ ENV DISPLAY=:0
 
 
 RUN pip install --no-cache-dir pillow requests eel
+
+
+WORKDIR /app
+
+FROM visualizer AS data_analysis
+
+RUN pip install --no-cache-dir pandas scikit-learn
 
 
 WORKDIR /app

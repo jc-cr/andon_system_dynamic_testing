@@ -68,4 +68,9 @@ services:
     command: >
       bash -c "python3 scripts/main.py"
 
+  analyze_data:
+    extends: base_service
+    command: >
+      bash -c "python3 scripts/analyze_data.py"
+
 
