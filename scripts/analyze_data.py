@@ -164,8 +164,6 @@ def calculate_detection_metrics(aligned_pairs):
         if rs_detected and andon_detected:
             true_positives += 1
             # Calculate latency (time difference)
-            latency = andon_record['timestamp'] - rs_record['timestamp']
-            detection_latencies.append(latency)
             true_positive_confidences.append(andon_record['confidence'])
         elif not rs_detected and andon_detected:
             false_positives += 1
@@ -180,8 +178,6 @@ def calculate_detection_metrics(aligned_pairs):
     false_positive_rate = false_positives / (false_positives + true_negatives) if (false_positives + true_negatives) > 0 else 0
     false_negative_rate = false_negatives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0
     
-    # Average detection latency
-    avg_detection_latency = np.mean(detection_latencies) if detection_latencies else 0
     
     # Average confidence scores
     avg_true_positive_confidence = np.mean(true_positive_confidences) if true_positive_confidences else 0
@@ -196,7 +192,6 @@ def calculate_detection_metrics(aligned_pairs):
         'detection_rate': detection_rate,
         'false_positive_rate': false_positive_rate,
         'false_negative_rate': false_negative_rate,
-        'avg_detection_latency': avg_detection_latency,
         'avg_true_positive_confidence': avg_true_positive_confidence,
         'avg_false_positive_confidence': avg_false_positive_confidence
     }
@@ -342,110 +337,6 @@ def analyze_test_data(test_data):
         'depth_metrics': depth_metrics
     }
 
-# [All other functions remain the same as in the original script]
-
-def main():
-    # Set up directories
-    base_dir = 'logs/dynamic_test'
-    output_dir = 'analysis_output'
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # Create a log file for the analysis
-    log_file = os.path.join(output_dir, 'analysis_log.txt')
-    
-    with open(log_file, 'w') as f:
-        f.write(f"Analysis started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-    
-    # Get all test directories
-    test_dirs = glob.glob(os.path.join(base_dir, '*'))
-    print(f"Found {len(test_dirs)} test directories")
-    
-    with open(log_file, 'a') as f:
-        f.write(f"Found {len(test_dirs)} test directories\n")
-    
-    # Analyze each test
-    all_results = []
-    
-    for test_dir in test_dirs:
-        try:
-            print(f"Analyzing {test_dir}...")
-            test_data = load_test_data(test_dir)
-            
-            if test_data:
-                # Log basic test information
-                with open(log_file, 'a') as f:
-                    f.write(f"\nAnalyzing {test_dir}:\n")
-                    f.write(f"  - Test name: {test_data['test_name']}\n")
-                    f.write(f"  - Angle: {test_data['config'].get('angle', 'Not specified')}\n")
-                    f.write(f"  - Direction: {test_data['config'].get('direction', 'Not specified')}\n")
-                
-                # Perform analysis
-                result = analyze_test_data(test_data)
-                result['original_data'] = test_data  # Store original data for further analysis
-                all_results.append(result)
-                
-                # Log each test results in more detail
-                with open(log_file, 'a') as f:
-                    f.write(f"  - Analysis results:\n")
-                    total_pairs = result['detection_metrics']['true_positives'] + result['detection_metrics']['false_positives'] + result['detection_metrics']['false_negatives'] + result['detection_metrics']['true_negatives']
-                    f.write(f"    - Aligned pairs: {total_pairs}\n")
-                    f.write(f"    - Detection rate: {result['detection_metrics']['detection_rate']:.2f}\n")
-                    f.write(f"    - Depth MAE: {result['depth_metrics']['mae']:.2f} mm\n")
-                    f.write(f"    - Valid depth pairs: {result['depth_metrics']['count']}\n")
-        except Exception as e:
-            print(f"Error analyzing {test_dir}: {e}")
-            with open(log_file, 'a') as f:
-                f.write(f"\nError analyzing {test_dir}: {e}\n")
-    
-    print(f"Analyzed {len(all_results)} tests successfully")
-    
-    try:
-        # Generate visualizations
-        print("Generating visualizations...")
-        generate_visualizations(all_results, os.path.join(output_dir, 'figures'))
-        
-        # Export results to CSV
-        print("Exporting results to CSV...")
-        export_to_csv(all_results, output_dir)
-        
-        # Log overall statistics
-        with open(log_file, 'a') as f:
-            f.write(f"\n\nOverall Statistics:\n")
-            f.write(f"- Tests analyzed: {len(all_results)}\n")
-            
-            avg_detection = np.mean([r['detection_metrics']['detection_rate'] for r in all_results])
-            avg_mae = np.mean([r['depth_metrics']['mae'] for r in all_results if r['depth_metrics']['count'] > 0])
-            
-            f.write(f"- Average detection rate: {avg_detection:.2f}\n")
-            f.write(f"- Average depth MAE: {avg_mae:.2f} mm\n")
-            f.write(f"\nAnalysis completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
-    except Exception as e:
-        print(f"Error in post-processing: {e}")
-        with open(log_file, 'a') as f:
-            f.write(f"\nError in post-processing: {e}\n")
-    
-    print(f"Analysis complete. Results saved to {output_dir}")
-
-
-# This function should be run once to create example config.json files
-def generate_example_configs():
-    """Generate example config.json files with absolute timestamps"""
-    example_config = {
-        "angle": 30,
-        "direction": "forward",
-        "start_timestamp": 1742846099.641373,  # Replace with actual timestamp
-        "end_timestamp": 1742846104.858797     # Replace with actual timestamp
-    }
-    
-    with open("example_config.json", "w") as f:
-        json.dump(example_config, f, indent=2)
-    
-    print("Generated example_config.json file")
-
-
-if __name__ == "__main__":
-    main()
-
 def analyze_detection_vs_distance(all_results):
     """Analyze how detection probability varies with distance."""
     distance_bins = []
@@ -487,7 +378,6 @@ def analyze_detection_vs_distance(all_results):
         'distance_bins': distance_bins,
         'detection_rates': detection_rates
     }
-
 
 def analyze_by_config_params(all_results):
     """Analyze how performance varies with test configuration parameters."""
@@ -789,6 +679,7 @@ def generate_visualizations(all_results, output_dir):
         plt.tight_layout()
         plt.savefig(os.path.join(output_dir, 'depth_error_by_angle.png'))
         plt.close()
+
 def export_to_csv(all_results, output_dir):
     """Export analysis results to CSV files."""
     os.makedirs(output_dir, exist_ok=True)
@@ -803,7 +694,6 @@ def export_to_csv(all_results, output_dir):
             'detection_rate': result['detection_metrics']['detection_rate'],
             'false_positive_rate': result['detection_metrics']['false_positive_rate'],
             'false_negative_rate': result['detection_metrics']['false_negative_rate'],
-            'avg_detection_latency': result['detection_metrics']['avg_detection_latency'],
             'depth_mae': result['depth_metrics']['mae'],
             'depth_rmse': result['depth_metrics']['rmse'],
             'depth_mean_relative_error': result['depth_metrics']['mean_relative_error'],
