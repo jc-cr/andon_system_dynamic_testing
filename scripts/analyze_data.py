@@ -416,196 +416,10 @@ def analyze_by_config_params(all_results):
     }
 
 def generate_visualizations(all_results, output_dir):
-    """Generate and save visualization figures with improved formatting."""
+    """Generate and save improved visualization figures for depth and detection accuracy."""
     os.makedirs(output_dir, exist_ok=True)
     
-    # Create separate lists for forward and backward tests
-    forward_tests = [r for r in all_results if r['config'].get('direction', '').lower() in ['forward', 'fwd']]
-    backward_tests = [r for r in all_results if r['config'].get('direction', '').lower() in ['backward', 'back', 'bck']]
-    
-    # 1. Detection Rate by Test (Split by direction)
-    # Forward tests
-    if forward_tests:
-        # Sort by angle for consistent display
-        forward_tests = sorted(forward_tests, key=lambda r: r['config'].get('angle', 0))
-        test_names = [f"{r['test_name']} ({r['config'].get('angle', 'N/A')}°)" for r in forward_tests]
-        detection_rates = [r['detection_metrics']['detection_rate'] for r in forward_tests]
-        
-        plt.figure(figsize=(12, 6))
-        bars = plt.bar(test_names, detection_rates)
-        
-        # Add value labels on top of bars
-        for bar in bars:
-            height = bar.get_height()
-            plt.text(bar.get_x() + bar.get_width()/2., height + 0.05,
-                    f'{height:.2f}', ha='center', va='bottom')
-            
-        plt.xlabel('Test Name (Angle)')
-        plt.ylabel('Detection Rate')
-        plt.title('Detection Rate by Test - Forward Direction')
-        plt.xticks(rotation=45)
-        plt.ylim(0, 1.1)  # Set y-axis limit with some margin
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, 'detection_rate_forward_tests.png'))
-        plt.close()
-    
-    # Backward tests
-    if backward_tests:
-        # Sort by angle for consistent display
-        backward_tests = sorted(backward_tests, key=lambda r: r['config'].get('angle', 0))
-        test_names = [f"{r['test_name']} ({r['config'].get('angle', 'N/A')}°)" for r in backward_tests]
-        detection_rates = [r['detection_metrics']['detection_rate'] for r in backward_tests]
-        
-        plt.figure(figsize=(12, 6))
-        bars = plt.bar(test_names, detection_rates)
-        
-        # Add value labels on top of bars
-        for bar in bars:
-            height = bar.get_height()
-            plt.text(bar.get_x() + bar.get_width()/2., height + 0.05,
-                    f'{height:.2f}', ha='center', va='bottom')
-            
-        plt.xlabel('Test Name (Angle)')
-        plt.ylabel('Detection Rate')
-        plt.title('Detection Rate by Test - Backward Direction')
-        plt.xticks(rotation=45)
-        plt.ylim(0, 1.1)  # Set y-axis limit with some margin
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, 'detection_rate_backward_tests.png'))
-        plt.close()
-        
-    # Combined detection rate visualization
-    # Sort all results by angle for consistent display
-    sorted_results = sorted(all_results, key=lambda r: r['config'].get('angle', 0))
-    test_labels = [f"{r['test_name']} ({r['config'].get('angle', 'N/A')}°)" for r in sorted_results]
-    directions = [r['config'].get('direction', 'N/A') for r in sorted_results]
-    detection_rates = [r['detection_metrics']['detection_rate'] for r in sorted_results]
-    
-    plt.figure(figsize=(14, 7))
-    
-    # Create a color map based on direction
-    colors = ['#1f77b4' if d.lower() in ['backward', 'back', 'bck'] else '#ff7f0e' for d in directions]
-    
-    bars = plt.bar(test_labels, detection_rates, color=colors)
-    
-    # Add value labels on top of bars
-    for bar in bars:
-        height = bar.get_height()
-        plt.text(bar.get_x() + bar.get_width()/2., height + 0.05,
-                f'{height:.2f}', ha='center', va='bottom')
-        
-    plt.xlabel('Test Name (Angle)')
-    plt.ylabel('Detection Rate')
-    plt.title('Detection Rate by Test and Direction')
-    plt.xticks(rotation=45)
-    plt.ylim(0, 1.1)  # Set y-axis limit with some margin
-    
-    # Add a legend
-    from matplotlib.patches import Patch
-    legend_elements = [
-        Patch(facecolor='#1f77b4', label='Backward Direction'),
-        Patch(facecolor='#ff7f0e', label='Forward Direction')
-    ]
-    plt.legend(handles=legend_elements, loc='upper right')
-    
-    plt.tight_layout()
-    plt.savefig(os.path.join(output_dir, 'detection_rate_by_test.png'))
-    plt.close()
-    
-    # 2. Depth Error Analysis - Improved with coloring by test
-    # Combine all depth data with test information
-    all_realsense_depths = []
-    all_errors = []
-    all_test_names = []  # Track which test each point belongs to
-    all_test_angles = []  # Track angle information
-    all_test_directions = []  # Track direction information
-    
-    for result in all_results:
-        if 'realsense_depths' in result['depth_metrics'] and result['depth_metrics']['realsense_depths']:
-            count = len(result['depth_metrics']['realsense_depths'])
-            all_realsense_depths.extend(result['depth_metrics']['realsense_depths'])
-            all_errors.extend(result['depth_metrics']['errors'])
-            
-            # Extend the test information for each data point
-            test_name = f"{result['test_name']} ({result['config'].get('angle', 'N/A')}°)"
-            all_test_names.extend([test_name] * count)
-            all_test_angles.extend([result['config'].get('angle', 0)] * count)
-            all_test_directions.extend([result['config'].get('direction', '')] * count)
-    
-    if all_realsense_depths and all_errors:
-        # Create a figure with a larger size for better visibility
-        plt.figure(figsize=(14, 8))
-        
-        # Get unique tests for color mapping
-        unique_tests = list(set(all_test_names))
-        
-        # Create a custom colormap 
-        import matplotlib.cm as cm
-        cmap = cm.get_cmap('tab10', len(unique_tests))
-        
-        # Create color dictionary
-        color_dict = {test: cmap(i) for i, test in enumerate(unique_tests)}
-        
-        # Create a scatter plot with different colors
-        for test in unique_tests:
-            # Get indices for this test
-            indices = [i for i, t in enumerate(all_test_names) if t == test]
-            
-            # Get depth and error values for these indices
-            depths = [all_realsense_depths[i] for i in indices]
-            errors = [all_errors[i] for i in indices]
-            
-            # Plot this test with its assigned color
-            plt.scatter(depths, errors, alpha=0.6, label=test, color=color_dict[test])
-        
-        plt.axhline(y=0, color='r', linestyle='-', linewidth=1.5)
-        plt.xlabel('RealSense Depth (mm)')
-        plt.ylabel('Error: Andon - RealSense (mm)')
-        plt.title('Depth Error vs. Actual Distance (Colored by Test)')
-        plt.grid(True, alpha=0.3)
-        
-        # Add a legend (outside the plot area)
-        plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, 'depth_error_vs_distance.png'), bbox_inches='tight')
-        plt.close()
-        
-        # Also create an alternative version colored by direction
-        plt.figure(figsize=(14, 8))
-        
-        # Get unique directions
-        unique_directions = sorted(set(all_test_directions))
-        
-        # Plot points by direction
-        for direction in unique_directions:
-            # Get indices for this direction
-            indices = [i for i, d in enumerate(all_test_directions) if d.lower() == direction.lower()]
-            
-            # Get depth and error values for these indices
-            depths = [all_realsense_depths[i] for i in indices]
-            errors = [all_errors[i] for i in indices]
-            
-            # Use consistent colors for forward/backward
-            color = '#ff7f0e' if 'forward' in direction.lower() or 'fwd' in direction.lower() else '#1f77b4'
-            
-            # Plot this direction
-            plt.scatter(depths, errors, alpha=0.6, label=direction, color=color)
-        
-        plt.axhline(y=0, color='r', linestyle='-', linewidth=1.5)
-        plt.xlabel('RealSense Depth (mm)')
-        plt.ylabel('Error: Andon - RealSense (mm)')
-        plt.title('Depth Error vs. Actual Distance (Colored by Direction)')
-        plt.grid(True, alpha=0.3)
-        
-        # Add a legend
-        plt.legend()
-        
-        plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, 'depth_error_vs_distance_by_direction.png'))
-        plt.close()
-    
-    # 3. Detection Probability vs. Distance
+    # Keep the existing detection probability vs. distance plot
     detection_distance_analysis = analyze_detection_vs_distance(all_results)
     
     if detection_distance_analysis['distance_bins']:
@@ -622,63 +436,300 @@ def generate_visualizations(all_results, output_dir):
         plt.savefig(os.path.join(output_dir, 'detection_vs_distance.png'))
         plt.close()
     
-    # 4. Performance by Angle - IMPROVED ORDERING
-    config_analysis = analyze_by_config_params(all_results)
+    # Combine all depth data for more comprehensive analysis
+    all_realsense_depths = []
+    all_andon_depths = []
+    all_errors = []
+    all_test_angles = []
+    all_test_directions = []
     
-    if config_analysis['angle_analysis']:
-        # Sort angles numerically to ensure proper order from -30 to 30
-        angles = sorted(config_analysis['angle_analysis'].keys(), key=lambda x: float(x) if isinstance(x, (int, float)) or (isinstance(x, str) and x.strip('-').isdigit()) else 0)
-        detection_rates = [config_analysis['angle_analysis'][a]['avg_detection_rate'] for a in angles]
+    for result in all_results:
+        if ('realsense_depths' in result['depth_metrics'] and 
+            result['depth_metrics']['realsense_depths'] and 
+            'andon_depths' in result['depth_metrics']):
+            
+            rs_depths = result['depth_metrics']['realsense_depths']
+            andon_depths = result['depth_metrics']['andon_depths']
+            
+            all_realsense_depths.extend(rs_depths)
+            all_andon_depths.extend(andon_depths)
+            all_errors.extend(result['depth_metrics']['errors'])
+            
+            # Extend the test information for each data point
+            test_angle = result['config'].get('angle', 0)
+            test_direction = result['config'].get('direction', '')
+            all_test_angles.extend([test_angle] * len(rs_depths))
+            all_test_directions.extend([test_direction] * len(rs_depths))
+    
+    if all_realsense_depths and all_andon_depths:
+        # 1. NEW: Direct comparison scatter plot with regression line
+        plt.figure(figsize=(10, 8))
+        plt.scatter(all_realsense_depths, all_andon_depths, alpha=0.5)
         
-        plt.figure(figsize=(10, 6))
+        # Add perfect agreement line (45 degrees)
+        max_depth = max(max(all_realsense_depths), max(all_andon_depths))
+        min_depth = min(min(all_realsense_depths), min(all_andon_depths))
+        plt.plot([min_depth, max_depth], [min_depth, max_depth], 'r--', label='Perfect Agreement')
         
-        # Use different colors for negative and positive angles
-        colors = ['#ff7f0e' if (isinstance(a, (int, float)) and a < 0) or (isinstance(a, str) and a.startswith('-')) else '#1f77b4' for a in angles]
+        # Add regression line
+        from scipy import stats
+        slope, intercept, r_value, p_value, std_err = stats.linregress(all_realsense_depths, all_andon_depths)
+        plt.plot([min_depth, max_depth], [intercept + slope*min_depth, intercept + slope*max_depth], 
+                 'g-', label=f'Regression Line (r²={r_value**2:.3f})')
         
-        bars = plt.bar(angles, detection_rates, color=colors)
-        
-        # Add value labels
-        for bar, rate in zip(bars, detection_rates):
-            height = bar.get_height()
-            plt.text(bar.get_x() + bar.get_width()/2., height + 0.05,
-                    f'{height:.2f}', ha='center', va='bottom')
-        
-        plt.xlabel('Angle (degrees)')
-        plt.ylabel('Average Detection Rate')
-        plt.title('Detection Rate by Angle')
-        plt.ylim(0, 1.05)
-        plt.grid(True, axis='y', alpha=0.3)
-        
-        # Ensure x-axis ticks show all angles
-        plt.xticks(angles)
-        
+        plt.xlabel('RealSense Depth (mm)')
+        plt.ylabel('Andon Depth (mm)')
+        plt.title('Depth Measurement Comparison')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
         plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, 'detection_by_angle.png'))
+        plt.savefig(os.path.join(output_dir, 'depth_comparison.png'))
         plt.close()
         
-        # Also create a depth MAE by angle plot
-        mae_values = [config_analysis['angle_analysis'][a]['avg_mae'] for a in angles]
+        # 2. NEW: Bland-Altman plot (shows agreement between two measurement methods)
+        plt.figure(figsize=(10, 8))
         
-        plt.figure(figsize=(10, 6))
-        bars = plt.bar(angles, mae_values, color=colors)
+        mean_depths = [(rs + andon)/2 for rs, andon in zip(all_realsense_depths, all_andon_depths)]
+        diff_depths = [andon - rs for rs, andon in zip(all_realsense_depths, all_andon_depths)]
         
-        # Add value labels
-        for bar, mae in zip(bars, mae_values):
-            height = bar.get_height()
-            plt.text(bar.get_x() + bar.get_width()/2., height + 50,
-                    f'{height:.1f}', ha='center', va='bottom')
+        # Calculate statistics for Bland-Altman
+        mean_diff = np.mean(diff_depths)
+        std_diff = np.std(diff_depths)
+        upper_limit = mean_diff + 1.96 * std_diff
+        lower_limit = mean_diff - 1.96 * std_diff
         
-        plt.xlabel('Angle (degrees)')
-        plt.ylabel('Average Depth MAE (mm)')
-        plt.title('Depth Estimation Error by Angle')
-        plt.grid(True, axis='y', alpha=0.3)
+        plt.scatter(mean_depths, diff_depths, alpha=0.5)
+        plt.axhline(y=mean_diff, color='r', linestyle='-', label=f'Mean Difference: {mean_diff:.1f} mm')
+        plt.axhline(y=upper_limit, color='g', linestyle='--', 
+                   label=f'Upper 95% Limit: {upper_limit:.1f} mm')
+        plt.axhline(y=lower_limit, color='g', linestyle='--', 
+                   label=f'Lower 95% Limit: {lower_limit:.1f} mm')
         
-        # Ensure x-axis ticks show all angles
-        plt.xticks(angles)
-        
+        plt.xlabel('Mean of RealSense and Andon Measurements (mm)')
+        plt.ylabel('Difference: Andon - RealSense (mm)')
+        plt.title('Bland-Altman Plot of Depth Measurements')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
         plt.tight_layout()
-        plt.savefig(os.path.join(output_dir, 'depth_error_by_angle.png'))
+        plt.savefig(os.path.join(output_dir, 'bland_altman_plot.png'))
         plt.close()
+        
+        # 3. NEW: Histogram of depth errors
+        plt.figure(figsize=(10, 6))
+        
+        # Use a reasonable bin count
+        num_bins = min(30, int(len(all_errors) / 5))
+        
+        # Calculate percentiles for better bin ranges
+        p1 = np.percentile(all_errors, 1)
+        p99 = np.percentile(all_errors, 99)
+        
+        counts, bins, patches = plt.hist(all_errors, bins=num_bins, 
+                                         range=(p1, p99), alpha=0.75, edgecolor='black')
+        
+        plt.axvline(x=0, color='r', linestyle='--', linewidth=1.5, 
+                   label='Zero Error')
+        plt.axvline(x=np.mean(all_errors), color='g', linestyle='-', linewidth=1.5, 
+                   label=f'Mean Error: {np.mean(all_errors):.1f} mm')
+        
+        plt.xlabel('Depth Error: Andon - RealSense (mm)')
+        plt.ylabel('Frequency')
+        plt.title('Distribution of Depth Measurement Errors')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, 'error_histogram.png'))
+        plt.close()
+        
+        # 4. NEW: Relative error vs distance
+        plt.figure(figsize=(10, 6))
+        
+        # Calculate relative errors (as percentage)
+        relative_errors = [(andon - rs) / rs * 100 if rs != 0 else np.nan 
+                          for rs, andon in zip(all_realsense_depths, all_andon_depths)]
+        
+        # Remove NaN values
+        filtered_depths = []
+        filtered_rel_errors = []
+        for depth, rel_err in zip(all_realsense_depths, relative_errors):
+            if not np.isnan(rel_err) and abs(rel_err) < 100:  # Filter extreme outliers
+                filtered_depths.append(depth)
+                filtered_rel_errors.append(rel_err)
+        
+        plt.scatter(filtered_depths, filtered_rel_errors, alpha=0.5)
+        
+        # Add a smooth trend line using LOWESS or polynomial fit
+        try:
+            from scipy.signal import savgol_filter
+            
+            # Sort points by x-value for smooth line
+            sorted_indices = np.argsort(filtered_depths)
+            sorted_depths = [filtered_depths[i] for i in sorted_indices]
+            sorted_errors = [filtered_rel_errors[i] for i in sorted_indices]
+            
+            # Apply Savitzky-Golay filter for smoothing
+            window_length = min(51, len(sorted_depths) - 1)
+            if window_length % 2 == 0:  # Must be odd
+                window_length -= 1
+                
+            if window_length > 3:  # Need at least 3 points
+                smoothed = savgol_filter(sorted_errors, window_length, 3)
+                plt.plot(sorted_depths, smoothed, 'r-', linewidth=2, 
+                        label='Trend Line')
+        except Exception as e:
+            print(f"Could not add trend line: {e}")
+            
+        plt.axhline(y=0, color='g', linestyle='--', linewidth=1.5)
+        plt.xlabel('RealSense Depth (mm)')
+        plt.ylabel('Relative Error (%)')
+        plt.title('Relative Depth Error vs. Distance')
+        plt.grid(True, alpha=0.3)
+        if 'smoothed' in locals():
+            plt.legend()
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, 'relative_error_vs_distance.png'))
+        plt.close()
+    
+    # 5. NEW: Detection performance heatmap by angle and distance
+    # Prepare data for the heatmap
+    try:
+        # Collect all aligned pairs from all tests
+        all_pairs = []
+        for result in all_results:
+            test_data = result['original_data']
+            pairs = align_timestamps(
+                test_data['realsense_data'], 
+                test_data['andon_data'],
+                test_data['config']
+            )
+            # Tag each pair with the test angle
+            test_angle = test_data['config'].get('angle', 0)
+            for pair in pairs:
+                if pair[0]['detected']:  # Only include pairs where RealSense detected
+                    pair = (pair[0], pair[1], test_angle)
+                    all_pairs.append(pair)
+        
+        if all_pairs:
+            # Define distance bins (in mm)
+            max_dist = 5000  # 5 meters in mm
+            dist_bin_size = 500  # 0.5 meters in mm
+            dist_bins = list(range(0, max_dist + dist_bin_size, dist_bin_size))
+            
+            # Define angle bins
+            angles = sorted(set(pair[2] for pair in all_pairs if isinstance(pair[2], (int, float))))
+            
+            # Initialize data matrix for heatmap
+            heatmap_data = np.zeros((len(angles), len(dist_bins)-1))
+            counts_matrix = np.zeros((len(angles), len(dist_bins)-1))
+            
+            # Populate the matrices
+            for rs, andon, angle in all_pairs:
+                if rs['depth'] > max_dist:
+                    continue
+                    
+                angle_idx = angles.index(angle)
+                dist_idx = min(int(rs['depth'] / dist_bin_size), len(dist_bins)-2)
+                
+                # Increment count
+                counts_matrix[angle_idx, dist_idx] += 1
+                
+                # Increment detection count if Andon detected too
+                if andon['detected']:
+                    heatmap_data[angle_idx, dist_idx] += 1
+            
+            # Calculate detection rates
+            with np.errstate(divide='ignore', invalid='ignore'):
+                detection_rate_matrix = np.divide(heatmap_data, counts_matrix)
+                detection_rate_matrix = np.nan_to_num(detection_rate_matrix)  # Replace NaN with 0
+            
+            # Only create heatmap if we have enough data
+            if np.sum(counts_matrix) > 10:  # Arbitrary threshold
+                plt.figure(figsize=(12, 8))
+                
+                # Set up the heatmap
+                plt.imshow(detection_rate_matrix, cmap='viridis', aspect='auto', 
+                          vmin=0, vmax=1, interpolation='nearest')
+                
+                # Configure axes
+                plt.colorbar(label='Detection Rate')
+                
+                # Set x-axis ticks and labels (distance bins)
+                x_ticks = np.arange(len(dist_bins)-1)
+                x_labels = [f"{dist_bins[i]/1000:.1f}-{dist_bins[i+1]/1000:.1f}" for i in range(len(dist_bins)-1)]
+                plt.xticks(x_ticks, x_labels, rotation=45)
+                
+                # Set y-axis ticks and labels (angles)
+                y_ticks = np.arange(len(angles))
+                plt.yticks(y_ticks, angles)
+                
+                plt.xlabel('Distance Range (m)')
+                plt.ylabel('Angle (degrees)')
+                plt.title('Detection Rate by Angle and Distance')
+                
+                # Add count numbers to cells
+                for i in range(len(angles)):
+                    for j in range(len(dist_bins)-1):
+                        count = counts_matrix[i, j]
+                        if count > 0:
+                            rate = detection_rate_matrix[i, j]
+                            text_color = 'white' if rate < 0.6 else 'black'
+                            plt.text(j, i, f"{int(count)}\n{rate:.2f}", ha='center', va='center', 
+                                    color=text_color, fontsize=8)
+                
+                plt.tight_layout()
+                plt.savefig(os.path.join(output_dir, 'detection_heatmap.png'))
+                plt.close()
+    except Exception as e:
+        print(f"Could not create detection heatmap: {e}")
+    
+    # 6. NEW: 3D surface plot of depth error by distance and angle
+    try:
+        from mpl_toolkits.mplot3d import Axes3D
+        
+        if all_realsense_depths and len(all_test_angles) > 0:
+            # Convert angle strings to numbers if needed
+            numeric_angles = []
+            for angle in all_test_angles:
+                if isinstance(angle, (int, float)):
+                    numeric_angles.append(angle)
+                elif isinstance(angle, str) and angle.strip('-').isdigit():
+                    numeric_angles.append(float(angle))
+                else:
+                    numeric_angles.append(0)  # Default for non-numeric
+            
+            # Create a figure for 3D plot
+            fig = plt.figure(figsize=(12, 10))
+            ax = fig.add_subplot(111, projection='3d')
+            
+            # Create the scatter plot
+            scatter = ax.scatter(
+                all_realsense_depths, 
+                numeric_angles, 
+                all_errors,
+                c=all_errors,  # Color by error
+                cmap='coolwarm',
+                alpha=0.7
+            )
+            
+            # Add a color bar
+            colorbar = fig.colorbar(scatter, ax=ax, label='Depth Error (mm)')
+            
+            # Set labels
+            ax.set_xlabel('Distance (mm)')
+            ax.set_ylabel('Angle (degrees)')
+            ax.set_zlabel('Depth Error (mm)')
+            
+            ax.set_title('3D Visualization of Depth Error by Distance and Angle')
+            
+            # Adjust view angle
+            ax.view_init(elev=30, azim=135)
+            
+            plt.tight_layout()
+            plt.savefig(os.path.join(output_dir, 'depth_error_3d.png'))
+            plt.close()
+    except Exception as e:
+        print(f"Could not create 3D error plot: {e}")
+
 
 def export_to_csv(all_results, output_dir):
     """Export analysis results to CSV files."""
