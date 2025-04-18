@@ -1,4 +1,4 @@
-Analysis started at: 2025-04-18 16:13:01
+Analysis started at: 2025-04-18 16:36:13
 
 Found 11 test directories
 
@@ -178,4 +178,4 @@ Overall Statistics:
 - Average detection rate: 0.54
 - Average depth MAE: 768.60 mm
 
-Analysis completed at: 2025-04-18 16:13:03
+Analysis completed at: 2025-04-18 16:36:19

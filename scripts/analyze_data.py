@@ -12,10 +12,16 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from matplotlib import font_manager
 
+
+plt.rcParams['figure.figsize'] = (12, 8)  # Larger default figure size
+plt.rcParams["figure.autolayout"]  = True
+plt.rcParams["figure.dpi"] = 300
+
+
+
 # Set font with fallbacks to system fonts
 plt.rcParams['font.family'] = 'serif'
 
-# Increase font sizes globally
 plt.rcParams['font.size'] = 14  # Base font size
 plt.rcParams['axes.titlesize'] = 18  # Title font size
 plt.rcParams['axes.labelsize'] = 16  # Axes labels font size
@@ -519,11 +525,11 @@ def add_direction_comparison_visualizations(all_results, output_dir):
         # Add value labels on top of bars
         for i, v in enumerate(fwd_mae):
             if v > 0:
-                plt.text(i - bar_width/2, v + 20, f"{v:.2f}", ha='center', va='bottom')
+                plt.text(i - bar_width/2, v + 1, f"{v:.2f}", ha='center', va='bottom')
         
         for i, v in enumerate(back_mae):
             if v > 0:
-                plt.text(i + bar_width/2, v + 20, f"{v:.2f}", ha='center', va='bottom')
+                plt.text(i + bar_width/2, v + 1, f"{v:.2f}", ha='center', va='bottom')
         
         plt.xlabel('Angle (degrees)')
         plt.ylabel('Mean Absolute Error (mm)')
