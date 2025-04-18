@@ -3,10 +3,28 @@ import json
 import glob
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from datetime import datetime
 from scipy.stats import pearsonr
 from sklearn.metrics import mean_absolute_error, mean_squared_error
+
+
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+from matplotlib import font_manager
+
+# Set font with fallbacks to system fonts
+plt.rcParams['font.family'] = 'serif'
+
+# Increase font sizes globally
+plt.rcParams['font.size'] = 14  # Base font size
+plt.rcParams['axes.titlesize'] = 18  # Title font size
+plt.rcParams['axes.labelsize'] = 16  # Axes labels font size
+plt.rcParams['xtick.labelsize'] = 14  # X-axis tick labels
+plt.rcParams['ytick.labelsize'] = 14  # Y-axis tick labels
+plt.rcParams['legend.fontsize'] = 14  # Legend font size
+plt.rcParams['figure.titlesize'] = 20  # Figure title size
+
+
 
 def load_test_data(test_dir):
     """Load data from a test directory."""
@@ -91,10 +109,10 @@ def align_timestamps(realsense_data, andon_data, config, max_time_diff=0.1):
     if end_timestamp is None:
         end_timestamp = realsense_data[-1]['timestamp']
     
-    # Print time window info
+    # Print time window info with 2 decimal precision
     rs_first_time = realsense_data[0]['timestamp']
-    print(f"  - Using time window: {start_timestamp} to {end_timestamp}")
-    print(f"  - Relative to start: {start_timestamp - rs_first_time:.2f}s to {end_timestamp - rs_first_time:.2f}s")
+    print(f"  - Using time window: {start_timestamp:.2f} to {end_timestamp:.2f}")
+    print(f"  - Relative to start: {(start_timestamp - rs_first_time):.2f}s to {(end_timestamp - rs_first_time):.2f}s")
     
     # Filter data within the specified time window
     filtered_realsense = [
@@ -178,7 +196,6 @@ def calculate_detection_metrics(aligned_pairs):
     false_positive_rate = false_positives / (false_positives + true_negatives) if (false_positives + true_negatives) > 0 else 0
     false_negative_rate = false_negatives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0
     
-    
     # Average confidence scores
     avg_true_positive_confidence = np.mean(true_positive_confidences) if true_positive_confidences else 0
     avg_false_positive_confidence = np.mean(false_positive_confidences) if false_positive_confidences else 0
@@ -189,11 +206,11 @@ def calculate_detection_metrics(aligned_pairs):
         'false_positives': false_positives,
         'false_negatives': false_negatives,
         'true_negatives': true_negatives,
-        'detection_rate': detection_rate,
-        'false_positive_rate': false_positive_rate,
-        'false_negative_rate': false_negative_rate,
-        'avg_true_positive_confidence': avg_true_positive_confidence,
-        'avg_false_positive_confidence': avg_false_positive_confidence
+        'detection_rate': round(detection_rate, 2),
+        'false_positive_rate': round(false_positive_rate, 2),
+        'false_negative_rate': round(false_negative_rate, 2),
+        'avg_true_positive_confidence': round(avg_true_positive_confidence, 2),
+        'avg_false_positive_confidence': round(avg_false_positive_confidence, 2)
     }
 
 def calculate_depth_metrics(aligned_pairs):
@@ -233,7 +250,7 @@ def calculate_depth_metrics(aligned_pairs):
     all_realsense_depths = [pair[0]['depth'] for pair in detected_pairs]
     all_andon_depths = [pair[1]['depth'] for pair in detected_pairs]
     
-    # Print depth range info
+    # Print depth range info with 2 decimal precision
     rs_min, rs_max = min(all_realsense_depths), max(all_realsense_depths)
     andon_min, andon_max = min(all_andon_depths), max(all_andon_depths)
     print(f"  - RealSense depth range: {rs_min:.2f} to {rs_max:.2f} mm")
@@ -294,12 +311,12 @@ def calculate_depth_metrics(aligned_pairs):
     
     return {
         'count': len(valid_pairs),
-        'mae': mae,
-        'rmse': rmse,
-        'mean_relative_error': mean_relative_error,
-        'bias': bias,
-        'correlation': correlation,
-        'p_value': p_value,
+        'mae': round(mae, 2),
+        'rmse': round(rmse, 2),
+        'mean_relative_error': round(mean_relative_error, 2),
+        'bias': round(bias, 2),
+        'correlation': round(correlation, 2),
+        'p_value': round(p_value, 2),
         'realsense_depths': realsense_depths,
         'andon_depths': andon_depths,
         'errors': errors,
@@ -308,14 +325,14 @@ def calculate_depth_metrics(aligned_pairs):
 
 def analyze_test_data(test_data):
     """Analyze a single test's data and compute metrics."""
-    # Print timestamp ranges
+    # Print timestamp ranges with 2 decimal precision
     rs_first_time = test_data['realsense_data'][0]['timestamp']
     rs_last_time = test_data['realsense_data'][-1]['timestamp']
     andon_first_time = test_data['andon_data'][0]['timestamp']
     andon_last_time = test_data['andon_data'][-1]['timestamp']
     
-    print(f"  - RealSense data range: {rs_first_time} to {rs_last_time} ({rs_last_time - rs_first_time:.2f}s)")
-    print(f"  - Andon data range: {andon_first_time} to {andon_last_time} ({andon_last_time - andon_first_time:.2f}s)")
+    print(f"  - RealSense data range: {rs_first_time:.2f} to {rs_last_time:.2f} ({(rs_last_time - rs_first_time):.2f}s)")
+    print(f"  - Andon data range: {andon_first_time:.2f} to {andon_last_time:.2f} ({(andon_last_time - andon_first_time):.2f}s)")
     
     # Align timestamps between RealSense and Andon data using the config time window
     aligned_pairs = align_timestamps(
@@ -372,7 +389,7 @@ def analyze_detection_vs_distance(all_results):
             
             bin_center = (min_dist + max_dist) / 2
             distance_bins.append(bin_center / 1000)  # Convert back to meters for display
-            detection_rates.append(detection_rate)
+            detection_rates.append(round(detection_rate, 2))
     
     return {
         'distance_bins': distance_bins,
@@ -393,8 +410,8 @@ def analyze_by_config_params(all_results):
             maes = [r['depth_metrics']['mae'] for r in angle_results]
             angle_analysis[angle] = {
                 'count': len(angle_results),
-                'avg_detection_rate': np.mean(detection_rates),
-                'avg_mae': np.mean([mae for mae in maes if mae > 0])  # Skip zero MAEs
+                'avg_detection_rate': round(np.mean(detection_rates), 2),
+                'avg_mae': round(np.mean([mae for mae in maes if mae > 0]), 2)  # Skip zero MAEs
             }
     
     # Analysis by direction
@@ -406,8 +423,8 @@ def analyze_by_config_params(all_results):
             maes = [r['depth_metrics']['mae'] for r in direction_results]
             direction_analysis[direction] = {
                 'count': len(direction_results),
-                'avg_detection_rate': np.mean(detection_rates),
-                'avg_mae': np.mean([mae for mae in maes if mae > 0])  # Skip zero MAEs
+                'avg_detection_rate': round(np.mean(detection_rates), 2),
+                'avg_mae': round(np.mean([mae for mae in maes if mae > 0]), 2)  # Skip zero MAEs
             }
     
     return {
@@ -415,9 +432,260 @@ def analyze_by_config_params(all_results):
         'direction_analysis': direction_analysis
     }
 
+
+def add_direction_comparison_visualizations(all_results, output_dir):
+    """Generate visualizations comparing forward vs backward approaches."""
+    # Separate results by direction
+    forward_results = [r for r in all_results if r['config'].get('direction', '').lower() in ['forward', 'fwd']]
+    backward_results = [r for r in all_results if r['config'].get('direction', '').lower() in ['backward', 'back', 'bck']]
+    
+    # 1. Detection rate by angle comparison
+    if forward_results and backward_results:
+        # Get all unique angles
+        all_angles = sorted(set([r['config'].get('angle', 0) for r in all_results]))
+        
+        # Prepare data
+        fwd_rates = []
+        back_rates = []
+        for angle in all_angles:
+            # Get forward results for this angle
+            angle_fwd = [r for r in forward_results if r['config'].get('angle', 0) == angle]
+            if angle_fwd:
+                fwd_rates.append(round(np.mean([r['detection_metrics']['detection_rate'] for r in angle_fwd]), 2))
+            else:
+                fwd_rates.append(0)
+            
+            # Get backward results for this angle
+            angle_back = [r for r in backward_results if r['config'].get('angle', 0) == angle]
+            if angle_back:
+                back_rates.append(round(np.mean([r['detection_metrics']['detection_rate'] for r in angle_back]), 2))
+            else:
+                back_rates.append(0)
+        
+        # Create the comparison bar chart
+        plt.figure(figsize=(12, 6))
+        bar_width = 0.35
+        index = np.arange(len(all_angles))
+        
+        plt.bar(index - bar_width/2, fwd_rates, bar_width, label='Forward', color='#ff7f0e', alpha=0.8)
+        plt.bar(index + bar_width/2, back_rates, bar_width, label='Backward', color='#1f77b4', alpha=0.8)
+        
+        # Add value labels on top of bars
+        for i, v in enumerate(fwd_rates):
+            if v > 0:
+                plt.text(i - bar_width/2, v + 0.03, f"{v:.2f}", ha='center', va='bottom')
+        
+        for i, v in enumerate(back_rates):
+            if v > 0:
+                plt.text(i + bar_width/2, v + 0.03, f"{v:.2f}", ha='center', va='bottom')
+        
+        plt.xlabel('Angle (degrees)')
+        plt.ylabel('Detection Rate')
+        plt.title('Detection Rate Comparison: Forward vs. Backward')
+        plt.xticks(index, all_angles)
+        plt.ylim(0, 1.1)
+        plt.grid(axis='y', alpha=0.3)
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, 'detection_rate_direction_comparison.png'))
+        plt.close()
+        
+        # 2. Create a similar comparison for depth MAE
+        fwd_mae = []
+        back_mae = []
+        for angle in all_angles:
+            # Get forward results for this angle
+            angle_fwd = [r for r in forward_results if r['config'].get('angle', 0) == angle]
+            if angle_fwd:
+                valid_maes = [r['depth_metrics']['mae'] for r in angle_fwd if r['depth_metrics']['mae'] > 0]
+                fwd_mae.append(round(np.mean(valid_maes), 2) if valid_maes else 0)
+            else:
+                fwd_mae.append(0)
+            
+            # Get backward results for this angle
+            angle_back = [r for r in backward_results if r['config'].get('angle', 0) == angle]
+            if angle_back:
+                valid_maes = [r['depth_metrics']['mae'] for r in angle_back if r['depth_metrics']['mae'] > 0]
+                back_mae.append(round(np.mean(valid_maes), 2) if valid_maes else 0)
+            else:
+                back_mae.append(0)
+        
+        # Create the comparison bar chart
+        plt.figure(figsize=(12, 6))
+        
+        plt.bar(index - bar_width/2, fwd_mae, bar_width, label='Forward', color='#ff7f0e', alpha=0.8)
+        plt.bar(index + bar_width/2, back_mae, bar_width, label='Backward', color='#1f77b4', alpha=0.8)
+        
+        # Add value labels on top of bars
+        for i, v in enumerate(fwd_mae):
+            if v > 0:
+                plt.text(i - bar_width/2, v + 20, f"{v:.2f}", ha='center', va='bottom')
+        
+        for i, v in enumerate(back_mae):
+            if v > 0:
+                plt.text(i + bar_width/2, v + 20, f"{v:.2f}", ha='center', va='bottom')
+        
+        plt.xlabel('Angle (degrees)')
+        plt.ylabel('Mean Absolute Error (mm)')
+        plt.title('Depth Error Comparison: Forward vs. Backward')
+        plt.xticks(index, all_angles)
+        plt.grid(axis='y', alpha=0.3)
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig(os.path.join(output_dir, 'depth_mae_direction_comparison.png'))
+        plt.close()
+        
+        # 3. Compare error distributions with box plots
+        forward_errors = []
+        backward_errors = []
+        forward_angles = []
+        backward_angles = []
+        
+        # Collect all error values by direction
+        for result in all_results:
+            if 'errors' in result['depth_metrics'] and result['depth_metrics']['errors']:
+                direction = result['config'].get('direction', '').lower()
+                angle = result['config'].get('angle', 0)
+                
+                if direction in ['forward', 'fwd']:
+                    forward_errors.extend(result['depth_metrics']['errors'])
+                    forward_angles.extend([angle] * len(result['depth_metrics']['errors']))
+                elif direction in ['backward', 'back', 'bck']:
+                    backward_errors.extend(result['depth_metrics']['errors'])
+                    backward_angles.extend([angle] * len(result['depth_metrics']['errors']))
+        
+        if forward_errors and backward_errors:
+            # Create boxplot comparison
+            plt.figure(figsize=(10, 6))
+            
+            # Prepare data for boxplot
+            data = [
+                [error for error, angle in zip(forward_errors, forward_angles) if abs(error) < 2000],
+                [error for error, angle in zip(backward_errors, backward_angles) if abs(error) < 2000]
+            ]
+            
+            # Create the boxplot
+            box = plt.boxplot(data, patch_artist=True, labels=['Forward', 'Backward'], showfliers=False)
+            
+            # Set colors
+            colors = ['#ff7f0e', '#1f77b4']
+            for patch, color in zip(box['boxes'], colors):
+                patch.set_facecolor(color)
+                patch.set_alpha(0.7)
+            
+            # Add stats
+            for i, d in enumerate(data):
+                if d:
+                    median = np.median(d)
+                    mean = np.mean(d)
+                    plt.text(i+1, np.max(d) + 50, f"Mean: {mean:.2f}", ha='center')
+                    plt.text(i+1, np.max(d) + 150, f"Median: {median:.2f}", ha='center')
+            
+            plt.axhline(y=0, color='r', linestyle='--', alpha=0.7)
+            plt.ylabel('Depth Error (mm)')
+            plt.title('Distribution of Depth Errors by Approach Direction')
+            plt.grid(axis='y', alpha=0.3)
+            plt.tight_layout()
+            plt.savefig(os.path.join(output_dir, 'error_distribution_by_direction.png'))
+            plt.close()
+            
+            # 4. Create a scatter plot of relative error vs. distance, colored by direction
+            plt.figure(figsize=(12, 8))
+            
+            # Collect all depth data points with direction info
+            all_rs_depths = []
+            all_rel_errors = []
+            all_directions = []
+            
+            for result in all_results:
+                if ('realsense_depths' in result['depth_metrics'] and 
+                    result['depth_metrics']['realsense_depths'] and 
+                    'andon_depths' in result['depth_metrics']):
+                    
+                    rs_depths = result['depth_metrics']['realsense_depths']
+                    andon_depths = result['depth_metrics']['andon_depths']
+                    direction = result['config'].get('direction', '').lower()
+                    
+                    # Calculate relative errors
+                    for rs, andon in zip(rs_depths, andon_depths):
+                        if rs > 0:
+                            rel_error = (andon - rs) / rs * 100
+                            # Filter extreme values
+                            if abs(rel_error) < 100:
+                                all_rs_depths.append(rs)
+                                all_rel_errors.append(round(rel_error, 2))
+                                all_directions.append(direction)
+            
+            # Plot forward points
+            fwd_indices = [i for i, d in enumerate(all_directions) if d in ['forward', 'fwd']]
+            fwd_depths = [all_rs_depths[i] for i in fwd_indices]
+            fwd_errors = [all_rel_errors[i] for i in fwd_indices]
+            
+            plt.scatter(fwd_depths, fwd_errors, alpha=0.5, label='Forward', color='#ff7f0e')
+            
+            # Plot backward points
+            back_indices = [i for i, d in enumerate(all_directions) if d in ['backward', 'back', 'bck']]
+            back_depths = [all_rs_depths[i] for i in back_indices]
+            back_errors = [all_rel_errors[i] for i in back_indices]
+            
+            plt.scatter(back_depths, back_errors, alpha=0.5, label='Backward', color='#1f77b4')
+            
+            # Add trend lines for each direction
+            try:
+                from scipy.signal import savgol_filter
+                
+                # Forward trend line
+                if len(fwd_depths) > 3:
+                    # Sort points for trend line
+                    sort_idx = np.argsort(fwd_depths)
+                    sorted_depths = [fwd_depths[i] for i in sort_idx]
+                    sorted_errors = [fwd_errors[i] for i in sort_idx]
+                    
+                    # Apply smoothing
+                    window_length = min(51, len(sorted_depths) - 1)
+                    if window_length % 2 == 0:  # Must be odd
+                        window_length -= 1
+                    
+                    if window_length > 3:
+                        fwd_smoothed = savgol_filter(sorted_errors, window_length, 3)
+                        plt.plot(sorted_depths, fwd_smoothed, 'r-', linewidth=2, 
+                                label='Forward Trend')
+                
+                # Backward trend line
+                if len(back_depths) > 3:
+                    # Sort points for trend line
+                    sort_idx = np.argsort(back_depths)
+                    sorted_depths = [back_depths[i] for i in sort_idx]
+                    sorted_errors = [back_errors[i] for i in sort_idx]
+                    
+                    # Apply smoothing
+                    window_length = min(51, len(sorted_depths) - 1)
+                    if window_length % 2 == 0:  # Must be odd
+                        window_length -= 1
+                    
+                    if window_length > 3:
+                        back_smoothed = savgol_filter(sorted_errors, window_length, 3)
+                        plt.plot(sorted_depths, back_smoothed, 'b-', linewidth=2, 
+                                label='Backward Trend')
+            except Exception as e:
+                print(f"Could not add trend lines: {e}")
+            
+            plt.axhline(y=0, color='g', linestyle='--', linewidth=1.5)
+            plt.xlabel('RealSense Depth (mm)')
+            plt.ylabel('Relative Error (%)')
+            plt.title('Relative Depth Error by Approach Direction')
+            plt.grid(True, alpha=0.3)
+            plt.legend()
+            plt.tight_layout()
+            plt.savefig(os.path.join(output_dir, 'relative_error_by_direction.png'))
+            plt.close()
+
+
 def generate_visualizations(all_results, output_dir):
     """Generate and save improved visualization figures for depth and detection accuracy."""
     os.makedirs(output_dir, exist_ok=True)
+
+    add_direction_comparison_visualizations(all_results, output_dir)
     
     # Keep the existing detection probability vs. distance plot
     detection_distance_analysis = analyze_detection_vs_distance(all_results)
@@ -471,11 +739,11 @@ def generate_visualizations(all_results, output_dir):
         min_depth = min(min(all_realsense_depths), min(all_andon_depths))
         plt.plot([min_depth, max_depth], [min_depth, max_depth], 'r--', label='Perfect Agreement')
         
-        # Add regression line
+        # Add regression line with 2 decimal precision
         from scipy import stats
         slope, intercept, r_value, p_value, std_err = stats.linregress(all_realsense_depths, all_andon_depths)
         plt.plot([min_depth, max_depth], [intercept + slope*min_depth, intercept + slope*max_depth], 
-                 'g-', label=f'Regression Line (r²={r_value**2:.3f})')
+                 'g-', label=f'Regression Line (r²={r_value**2:.2f})')
         
         plt.xlabel('RealSense Depth (mm)')
         plt.ylabel('Andon Depth (mm)')
@@ -492,18 +760,18 @@ def generate_visualizations(all_results, output_dir):
         mean_depths = [(rs + andon)/2 for rs, andon in zip(all_realsense_depths, all_andon_depths)]
         diff_depths = [andon - rs for rs, andon in zip(all_realsense_depths, all_andon_depths)]
         
-        # Calculate statistics for Bland-Altman
+        # Calculate statistics for Bland-Altman with 2 decimal precision
         mean_diff = np.mean(diff_depths)
         std_diff = np.std(diff_depths)
         upper_limit = mean_diff + 1.96 * std_diff
         lower_limit = mean_diff - 1.96 * std_diff
         
         plt.scatter(mean_depths, diff_depths, alpha=0.5)
-        plt.axhline(y=mean_diff, color='r', linestyle='-', label=f'Mean Difference: {mean_diff:.1f} mm')
+        plt.axhline(y=mean_diff, color='r', linestyle='-', label=f'Mean Difference: {mean_diff:.2f} mm')
         plt.axhline(y=upper_limit, color='g', linestyle='--', 
-                   label=f'Upper 95% Limit: {upper_limit:.1f} mm')
+                   label=f'Upper 95% Limit: {upper_limit:.2f} mm')
         plt.axhline(y=lower_limit, color='g', linestyle='--', 
-                   label=f'Lower 95% Limit: {lower_limit:.1f} mm')
+                   label=f'Lower 95% Limit: {lower_limit:.2f} mm')
         
         plt.xlabel('Mean of RealSense and Andon Measurements (mm)')
         plt.ylabel('Difference: Andon - RealSense (mm)')
@@ -530,7 +798,7 @@ def generate_visualizations(all_results, output_dir):
         plt.axvline(x=0, color='r', linestyle='--', linewidth=1.5, 
                    label='Zero Error')
         plt.axvline(x=np.mean(all_errors), color='g', linestyle='-', linewidth=1.5, 
-                   label=f'Mean Error: {np.mean(all_errors):.1f} mm')
+                   label=f'Mean Error: {np.mean(all_errors):.2f} mm')
         
         plt.xlabel('Depth Error: Andon - RealSense (mm)')
         plt.ylabel('Frequency')
@@ -544,7 +812,7 @@ def generate_visualizations(all_results, output_dir):
         # 4. NEW: Relative error vs distance
         plt.figure(figsize=(10, 6))
         
-        # Calculate relative errors (as percentage)
+        # Calculate relative errors (as percentage) with 2 decimal precision
         relative_errors = [(andon - rs) / rs * 100 if rs != 0 else np.nan 
                           for rs, andon in zip(all_realsense_depths, all_andon_depths)]
         
@@ -554,7 +822,7 @@ def generate_visualizations(all_results, output_dir):
         for depth, rel_err in zip(all_realsense_depths, relative_errors):
             if not np.isnan(rel_err) and abs(rel_err) < 100:  # Filter extreme outliers
                 filtered_depths.append(depth)
-                filtered_rel_errors.append(rel_err)
+                filtered_rel_errors.append(round(rel_err, 2))
         
         plt.scatter(filtered_depths, filtered_rel_errors, alpha=0.5)
         
@@ -653,7 +921,7 @@ def generate_visualizations(all_results, output_dir):
                 # Configure axes
                 plt.colorbar(label='Detection Rate')
                 
-                # Set x-axis ticks and labels (distance bins)
+                # Set x-axis ticks and labels (distance bins) with 2 decimal precision
                 x_ticks = np.arange(len(dist_bins)-1)
                 x_labels = [f"{dist_bins[i]/1000:.1f}-{dist_bins[i+1]/1000:.1f}" for i in range(len(dist_bins)-1)]
                 plt.xticks(x_ticks, x_labels, rotation=45)
@@ -666,7 +934,7 @@ def generate_visualizations(all_results, output_dir):
                 plt.ylabel('Angle (degrees)')
                 plt.title('Detection Rate by Angle and Distance')
                 
-                # Add count numbers to cells
+                # Add count numbers to cells with 2 decimal precision
                 for i in range(len(angles)):
                     for j in range(len(dist_bins)-1):
                         count = counts_matrix[i, j]
@@ -701,18 +969,19 @@ def generate_visualizations(all_results, output_dir):
             fig = plt.figure(figsize=(12, 10))
             ax = fig.add_subplot(111, projection='3d')
             
-            # Create the scatter plot
+            # Create the scatter plot with rounded error values
+            rounded_errors = [round(err, 2) for err in all_errors]
             scatter = ax.scatter(
                 all_realsense_depths, 
                 numeric_angles, 
-                all_errors,
-                c=all_errors,  # Color by error
+                rounded_errors,
+                c=rounded_errors,  # Color by error
                 cmap='coolwarm',
                 alpha=0.7
             )
             
-            # Add a color bar
-            colorbar = fig.colorbar(scatter, ax=ax, label='Depth Error (mm)')
+            # Add a color bar with 2 decimal precision
+            colorbar = fig.colorbar(scatter, ax=ax, label='Depth Error (mm)', format='%.2f')
             
             # Set labels
             ax.set_xlabel('Distance (mm)')
@@ -730,32 +999,31 @@ def generate_visualizations(all_results, output_dir):
     except Exception as e:
         print(f"Could not create 3D error plot: {e}")
 
-
 def export_to_csv(all_results, output_dir):
     """Export analysis results to CSV files."""
     os.makedirs(output_dir, exist_ok=True)
     
-    # 1. Summary metrics by test
+    # 1. Summary metrics by test - All numerical values rounded to 2 decimal places
     summary_data = []
     for result in all_results:
         summary_data.append({
             'test_name': result['test_name'],
             'angle': result['config'].get('angle', 'N/A'),
             'direction': result['config'].get('direction', 'N/A'),
-            'detection_rate': result['detection_metrics']['detection_rate'],
-            'false_positive_rate': result['detection_metrics']['false_positive_rate'],
-            'false_negative_rate': result['detection_metrics']['false_negative_rate'],
-            'depth_mae': result['depth_metrics']['mae'],
-            'depth_rmse': result['depth_metrics']['rmse'],
-            'depth_mean_relative_error': result['depth_metrics']['mean_relative_error'],
-            'depth_bias': result['depth_metrics']['bias'],
-            'depth_correlation': result['depth_metrics']['correlation']
+            'detection_rate': round(result['detection_metrics']['detection_rate'], 2),
+            'false_positive_rate': round(result['detection_metrics']['false_positive_rate'], 2),
+            'false_negative_rate': round(result['detection_metrics']['false_negative_rate'], 2),
+            'depth_mae': round(result['depth_metrics']['mae'], 2),
+            'depth_rmse': round(result['depth_metrics']['rmse'], 2),
+            'depth_mean_relative_error': round(result['depth_metrics']['mean_relative_error'], 2),
+            'depth_bias': round(result['depth_metrics']['bias'], 2),
+            'depth_correlation': round(result['depth_metrics']['correlation'], 2)
         })
     
     summary_df = pd.DataFrame(summary_data)
     summary_df.to_csv(os.path.join(output_dir, 'test_summary_metrics.csv'), index=False)
     
-    # 2. Configuration analysis
+    # 2. Configuration analysis - All numerical values rounded to 2 decimal places
     config_analysis = analyze_by_config_params(all_results)
     
     # Angle analysis
@@ -764,8 +1032,8 @@ def export_to_csv(all_results, output_dir):
         angle_data.append({
             'angle': angle,
             'test_count': metrics['count'],
-            'avg_detection_rate': metrics['avg_detection_rate'],
-            'avg_depth_mae': metrics['avg_mae']
+            'avg_detection_rate': round(metrics['avg_detection_rate'], 2),
+            'avg_depth_mae': round(metrics['avg_mae'], 2)
         })
     
     angle_df = pd.DataFrame(angle_data)
@@ -777,21 +1045,21 @@ def export_to_csv(all_results, output_dir):
         direction_data.append({
             'direction': direction,
             'test_count': metrics['count'],
-            'avg_detection_rate': metrics['avg_detection_rate'],
-            'avg_depth_mae': metrics['avg_mae']
+            'avg_detection_rate': round(metrics['avg_detection_rate'], 2),
+            'avg_depth_mae': round(metrics['avg_mae'], 2)
         })
     
     direction_df = pd.DataFrame(direction_data)
     direction_df.to_csv(os.path.join(output_dir, 'direction_analysis.csv'), index=False)
     
-    # 3. Detection vs Distance
+    # 3. Detection vs Distance - All numerical values rounded to 2 decimal places
     detection_distance_analysis = analyze_detection_vs_distance(all_results)
     
     distance_data = []
     for i in range(len(detection_distance_analysis['distance_bins'])):
         distance_data.append({
-            'distance_bin': detection_distance_analysis['distance_bins'][i],
-            'detection_rate': detection_distance_analysis['detection_rates'][i]
+            'distance_bin': round(detection_distance_analysis['distance_bins'][i], 2),
+            'detection_rate': round(detection_distance_analysis['detection_rates'][i], 2)
         })
     
     distance_df = pd.DataFrame(distance_data)
@@ -841,14 +1109,14 @@ def main():
                 rs_detections = sum(1 for record in test_data['realsense_data'] if record['detected'])
                 andon_detections = sum(1 for record in test_data['andon_data'] if record['detected'])
                 
-                # Log the time window being used
+                # Log the time window being used with 2 decimal precision
                 with open(log_file, 'a') as f:
                     f.write(f"\nAnalyzing {test_dir}:\n")
                     f.write(f"  - Test name: {test_data['test_name']}\n")
                     f.write(f"  - Angle: {test_data['config'].get('angle', 'Not specified')}\n")
                     f.write(f"  - Direction: {test_data['config'].get('direction', 'Not specified')}\n")
                     f.write(f"  - Total dataset duration: {total_duration:.2f} seconds\n")
-                    f.write(f"  - Config absolute timestamps: {start_timestamp} to {end_timestamp}\n")
+                    f.write(f"  - Config absolute timestamps: {start_timestamp:.2f} to {end_timestamp:.2f}\n")
                     f.write(f"  - Effective time window: {effective_window:.2f} seconds\n")
                     f.write(f"  - All RealSense records: {len(test_data['realsense_data'])}\n")
                     f.write(f"  - All Andon records: {len(test_data['andon_data'])}\n")
@@ -860,7 +1128,7 @@ def main():
                 result['original_data'] = test_data  # Store original data for further analysis
                 all_results.append(result)
                 
-                # Log each test results in more detail
+                # Log each test results in more detail with 2 decimal precision
                 with open(log_file, 'a') as f:
                     f.write(f"  - Analysis results:\n")
                     total_pairs = result['detection_metrics']['true_positives'] + result['detection_metrics']['false_positives'] + result['detection_metrics']['false_negatives'] + result['detection_metrics']['true_negatives']
@@ -884,7 +1152,7 @@ def main():
         print("Exporting results to CSV...")
         export_to_csv(all_results, output_dir)
         
-        # Log overall statistics
+        # Log overall statistics with 2 decimal precision
         with open(log_file, 'a') as f:
             f.write(f"\n\nOverall Statistics:\n")
             f.write(f"- Tests analyzed: {len(all_results)}\n")

@@ -1,4 +1,4 @@
-Analysis started at: 2025-04-12 00:58:19
+Analysis started at: 2025-04-18 16:13:01
 
 Found 11 test directories
 
@@ -7,7 +7,7 @@ Analyzing logs/dynamic_test/30_l_bck_20250324_195632:
   - Angle: 30
   - Direction: back
   - Total dataset duration: 12.81 seconds
-  - Config absolute timestamps: 1742846201.030974 to 1742846211.54098
+  - Config absolute timestamps: 1742846201.03 to 1742846211.54
   - Effective time window: 10.51 seconds
   - All RealSense records: 230
   - All Andon records: 230
@@ -24,7 +24,7 @@ Analyzing logs/dynamic_test/15_r_bck_20250324_195950:
   - Angle: -15
   - Direction: back
   - Total dataset duration: 9.87 seconds
-  - Config absolute timestamps: 1742846397.143757 to 1742846403.608515
+  - Config absolute timestamps: 1742846397.14 to 1742846403.61
   - Effective time window: 6.46 seconds
   - All RealSense records: 188
   - All Andon records: 188
@@ -41,7 +41,7 @@ Analyzing logs/dynamic_test/30_l_fwd_20250324_195452:
   - Angle: 30
   - Direction: forward
   - Total dataset duration: 9.09 seconds
-  - Config absolute timestamps: 1742846101.565591 to 1742846106.460499
+  - Config absolute timestamps: 1742846101.57 to 1742846106.46
   - Effective time window: 4.89 seconds
   - All RealSense records: 169
   - All Andon records: 169
@@ -58,7 +58,7 @@ Analyzing logs/dynamic_test/0_fwd_20250324_195825:
   - Angle: 0
   - Direction: forward
   - Total dataset duration: 7.47 seconds
-  - Config absolute timestamps: 1742846314.517409 to 1742846319.299747
+  - Config absolute timestamps: 1742846314.52 to 1742846319.30
   - Effective time window: 4.78 seconds
   - All RealSense records: 152
   - All Andon records: 152
@@ -75,7 +75,7 @@ Analyzing logs/dynamic_test/0_bck_20250324_195843:
   - Angle: 0
   - Direction: back
   - Total dataset duration: 8.03 seconds
-  - Config absolute timestamps: 1742846330.812653 to 1742846336.645708
+  - Config absolute timestamps: 1742846330.81 to 1742846336.65
   - Effective time window: 5.83 seconds
   - All RealSense records: 156
   - All Andon records: 156
@@ -92,7 +92,7 @@ Analyzing logs/dynamic_test/15_l_bck_20250324_195805:
   - Angle: 15
   - Direction: back
   - Total dataset duration: 9.14 seconds
-  - Config absolute timestamps: 1742846292.807897 to 1742846298.126611
+  - Config absolute timestamps: 1742846292.81 to 1742846298.13
   - Effective time window: 5.32 seconds
   - All RealSense records: 172
   - All Andon records: 172
@@ -109,7 +109,7 @@ Analyzing logs/dynamic_test/15_r_fwd_20250324_195933:
   - Angle: -15
   - Direction: forward
   - Total dataset duration: 7.83 seconds
-  - Config absolute timestamps: 1742846380.263202 to 1742846385.773405
+  - Config absolute timestamps: 1742846380.26 to 1742846385.77
   - Effective time window: 5.51 seconds
   - All RealSense records: 158
   - All Andon records: 158
@@ -126,7 +126,7 @@ Analyzing logs/dynamic_test/15_l_fwd_20250324_195743:
   - Angle: 15
   - Direction: forward
   - Total dataset duration: 8.62 seconds
-  - Config absolute timestamps: 1742846272.390622 to 1742846277.826079
+  - Config absolute timestamps: 1742846272.39 to 1742846277.83
   - Effective time window: 5.44 seconds
   - All RealSense records: 166
   - All Andon records: 166
@@ -143,7 +143,7 @@ Analyzing logs/dynamic_test/30_r_fwd_20250324_200009:
   - Angle: -30
   - Direction: forward
   - Total dataset duration: 7.73 seconds
-  - Config absolute timestamps: 1742846416.10523 to 1742846421.819879
+  - Config absolute timestamps: 1742846416.11 to 1742846421.82
   - Effective time window: 5.71 seconds
   - All RealSense records: 152
   - All Andon records: 152
@@ -160,7 +160,7 @@ Analyzing logs/dynamic_test/30_r_bck20250324_200029:
   - Angle: -30
   - Direction: back
   - Total dataset duration: 28.28 seconds
-  - Config absolute timestamps: 1742846437.008617 to 1742846442.189815
+  - Config absolute timestamps: 1742846437.01 to 1742846442.19
   - Effective time window: 5.18 seconds
   - All RealSense records: 496
   - All Andon records: 496
@@ -178,4 +178,4 @@ Overall Statistics:
 - Average detection rate: 0.54
 - Average depth MAE: 768.60 mm
 
-Analysis completed at: 2025-04-12 00:58:21
+Analysis completed at: 2025-04-18 16:13:03

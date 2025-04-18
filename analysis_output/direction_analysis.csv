@@ -1,3 +1,3 @@
 direction,test_count,avg_detection_rate,avg_depth_mae
-back,5,0.8077499692208295,711.1507676405174
-forward,5,0.2626114953040144,826.0444319142543
+back,5,0.81,711.15
+forward,5,0.26,826.04
